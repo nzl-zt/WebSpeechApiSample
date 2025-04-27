@@ -1,0 +1,125 @@
+﻿@{
+    ViewData["Title"] = "Web Speech API Demo";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: inline-block;
+            width: 140px;
+        }
+
+        select, button, textarea {
+            font-size: 1rem;
+        }
+    </style>
+
+    <script>
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let isListening = false;
+        let manualStop = false;
+
+        function toggleWebSpeech() {
+            if (!SpeechRecognition) {
+                alert("Your browser does not support the Web Speech API!");
+                return;
+            }
+
+            if (isListening) {
+                // Manuel durdur
+                manualStop = true;
+                recognition.stop();
+                // onend içinde buton metni güncellenecek
+            } else {
+                manualStop = false;
+                recognition = new SpeechRecognition();
+                recognition.lang = $("#languageSelect").val();
+                recognition.continuous = true;       // kesintisiz dinle
+                recognition.interimResults = false;
+
+                recognition.onstart = function() {
+                    isListening = true;
+                    $("#toggleButton").text("Stop Listening");
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[event.results.length - 1][0].transcript;
+                    $("#webSpeechOutput").val(transcript);
+                };
+
+                recognition.onerror = function(event) {
+                    alert("Speech recognition error: " + event.error);
+                };
+
+                recognition.onend = function() {
+                    if (!manualStop) {
+                        // kullanıcı durdurana kadar tekrar başlat
+                        recognition.start();
+                    } else {
+                        // manuel durduruldu, durumu sıfırla
+                        isListening = false;
+                        manualStop = false;
+                        $("#toggleButton").text("Start Listening");
+                    }
+                };
+
+                recognition.start();
+            }
+        }
+    </script>
+</head>
+<body>
+    <h2>Web Speech API Demo</h2>
+
+    <div class="control-group">
+        <label for="languageSelect">Choose language:</label>
+        <select id="languageSelect">
+            <option value="en-US">English (US)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="es-ES">Spanish (Spain)</option>
+            <option value="fr-FR">French (France)</option>
+            <option value="de-DE">German (Germany)</option>
+            <option value="it-IT">Italian (Italy)</option>
+            <option value="ja-JP">Japanese (Japan)</option>
+            <option value="ko-KR">Korean (Korea)</option>
+            <option value="zh-CN">Chinese (Mandarin)</option>
+            <option value="ru-RU">Russian (Russia)</option>
+            <option value="pt-BR">Portuguese (Brazil)</option>
+            <option value="ar-SA">Arabic (Saudi Arabia)</option>
+            <option value="hi-IN">Hindi (India)</option>
+            <option value="nl-NL">Dutch (Netherlands)</option>
+            <option value="tr-TR">Turkish (Turkey)</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <button id="toggleButton" type="button" onclick="toggleWebSpeech()">
+            Start Listening
+        </button>
+    </div>
+
+    <div class="control-group">
+        <label for="webSpeechOutput">Result:</label><br />
+        <textarea id="webSpeechOutput"
+                  rows="4"
+                  cols="60"
+                  placeholder="Recognition result will appear here…"></textarea>
+    </div>
+</body>
+</html>
