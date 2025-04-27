@@ -1,125 +1,120 @@
-﻿@{
-    ViewData["Title"] = "Web Speech API Demo";
-}
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title>@ViewData["Title"]</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        .control-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: inline-block;
-            width: 140px;
-        }
-
-        select, button, textarea {
-            font-size: 1rem;
-        }
-    </style>
-
-    <script>
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
-        let isListening = false;
-        let manualStop = false;
-
-        function toggleWebSpeech() {
-            if (!SpeechRecognition) {
-                alert("Your browser does not support the Web Speech API!");
-                return;
-            }
-
-            if (isListening) {
-                // Manuel durdur
-                manualStop = true;
-                recognition.stop();
-                // onend içinde buton metni güncellenecek
-            } else {
-                manualStop = false;
-                recognition = new SpeechRecognition();
-                recognition.lang = $("#languageSelect").val();
-                recognition.continuous = true;       // kesintisiz dinle
-                recognition.interimResults = false;
-
-                recognition.onstart = function() {
-                    isListening = true;
-                    $("#toggleButton").text("Stop Listening");
-                };
-
-                recognition.onresult = function(event) {
-                    const transcript = event.results[event.results.length - 1][0].transcript;
-                    $("#webSpeechOutput").val(transcript);
-                };
-
-                recognition.onerror = function(event) {
-                    alert("Speech recognition error: " + event.error);
-                };
-
-                recognition.onend = function() {
-                    if (!manualStop) {
-                        // kullanıcı durdurana kadar tekrar başlat
-                        recognition.start();
-                    } else {
-                        // manuel durduruldu, durumu sıfırla
-                        isListening = false;
-                        manualStop = false;
-                        $("#toggleButton").text("Start Listening");
-                    }
-                };
-
-                recognition.start();
-            }
-        }
-    </script>
+    <meta charset="UTF-8">
+    <title>Continuous Speech Recognition</title>
+    <!-- Bootstrap for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h2>Web Speech API Demo</h2>
+    <div class="container mt-5">
+        <h2 class="text-center">Continuous Speech Recognition</h2>
 
-    <div class="control-group">
-        <label for="languageSelect">Choose language:</label>
-        <select id="languageSelect">
-            <option value="en-US">English (US)</option>
-            <option value="en-GB">English (UK)</option>
-            <option value="es-ES">Spanish (Spain)</option>
-            <option value="fr-FR">French (France)</option>
-            <option value="de-DE">German (Germany)</option>
-            <option value="it-IT">Italian (Italy)</option>
-            <option value="ja-JP">Japanese (Japan)</option>
-            <option value="ko-KR">Korean (Korea)</option>
-            <option value="zh-CN">Chinese (Mandarin)</option>
-            <option value="ru-RU">Russian (Russia)</option>
-            <option value="pt-BR">Portuguese (Brazil)</option>
-            <option value="ar-SA">Arabic (Saudi Arabia)</option>
-            <option value="hi-IN">Hindi (India)</option>
-            <option value="nl-NL">Dutch (Netherlands)</option>
-            <option value="tr-TR">Turkish (Turkey)</option>
-        </select>
+        <!-- Language Selection -->
+        <div class="mb-3">
+            <label for="languageSelect" class="form-label">Select Language</label>
+            <select id="languageSelect" class="form-select" onchange="onLanguageChange()">
+                <option value="tr-TR">Turkish</option>
+                <option value="en-US">English (US)</option>
+                <option value="en-GB">English (UK)</option>
+                <option value="es-ES">Spanish</option>
+                <option value="fr-FR">French</option>
+                <option value="de-DE">German</option>
+                <option value="it-IT">Italian</option>
+                <option value="ja-JP">Japanese</option>
+                <option value="ko-KR">Korean</option>
+                <option value="pt-PT">Portuguese</option>
+                <option value="ru-RU">Russian</option>
+                <option value="zh-CN">Chinese (Simplified)</option>
+                <option value="zh-TW">Chinese (Traditional)</option>
+                <option value="ar-SA">Arabic</option>
+                <option value="hi-IN">Hindi</option>
+                <option value="tr-TR">Turkish</option>
+            </select>
+        </div>
+
+        <!-- Start/Stop Button -->
+        <div class="d-grid gap-2">
+            <button id="toggleBtn" class="btn btn-primary">Start</button>
+        </div>
+
+        <!-- Output Area -->
+        <div class="mt-4">
+            <textarea id="output" class="form-control" rows="6" placeholder="Recognition result will appear here..."></textarea>
+        </div>
     </div>
 
-    <div class="control-group">
-        <button id="toggleButton" type="button" onclick="toggleWebSpeech()">
-            Start Listening
-        </button>
-    </div>
+    <script>
+        // SpeechRecognition or webkitSpeechRecognition for compatibility
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          alert('Your browser does not support the Web Speech API!');
+        }
 
-    <div class="control-group">
-        <label for="webSpeechOutput">Result:</label><br />
-        <textarea id="webSpeechOutput"
-                  rows="4"
-                  cols="60"
-                  placeholder="Recognition result will appear here…"></textarea>
-    </div>
+        let recognition;
+        let isListening = false;
+
+        // Create a new recognition instance based on the selected language
+        function createRecognitionInstance(language) {
+          recognition = new SpeechRecognition();
+          recognition.continuous = true;     // Enable continuous listening mode
+          recognition.interimResults = false; // Do not take interim results (set to false if not needed)
+          recognition.lang = language;        // Set the language based on the selection
+
+          // Handle recognition results
+          recognition.onresult = (event) => {
+            const transcript = event.results[event.results.length - 1][0].transcript;
+            document.getElementById('output').value += transcript + ' ';
+          };
+
+          // Restart recognition if stopped unexpectedly (continuous listening)
+          recognition.onend = () => {
+            if (isListening) {
+              recognition.start();
+            }
+          };
+
+          recognition.onerror = (event) => {
+            console.error('Speech recognition error: ', event.error);
+          };
+        }
+
+        // Language change handler
+        function onLanguageChange() {
+          const selectedLanguage = document.getElementById('languageSelect').value;
+
+          document.getElementById('output').value = '';
+
+          // Stop listening if already listening
+          if (isListening) {
+            recognition.stop();
+            isListening = false;
+            document.getElementById('toggleBtn').textContent = 'Start';
+          }
+
+          // Create a new recognition instance with the selected language
+          createRecognitionInstance(selectedLanguage);
+        }
+
+        // Start or stop speech recognition
+        document.getElementById('toggleBtn').addEventListener('click', () => {
+          if (!isListening) {
+            if (!recognition) {
+              const defaultLanguage = document.getElementById('languageSelect').value;
+              createRecognitionInstance(defaultLanguage);
+            }
+            recognition.start();
+            isListening = true;
+            document.getElementById('toggleBtn').textContent = 'Stop';
+          } else {
+            recognition.stop();
+            isListening = false;
+            document.getElementById('toggleBtn').textContent = 'Start';
+          }
+        });
+    </script>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
